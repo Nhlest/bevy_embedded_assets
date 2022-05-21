@@ -18,6 +18,7 @@ use bevy::{
     asset::{AssetIo, AssetIoError},
     utils::HashMap,
 };
+use bevy::asset::{FileType, Metadata};
 
 mod plugin;
 pub use plugin::EmbeddedAssetPlugin;
@@ -92,7 +93,7 @@ impl AssetIo for EmbeddedAssetIo {
         &self,
         path: &Path,
     ) -> Result<Box<dyn Iterator<Item = PathBuf>>, AssetIoError> {
-        if self.is_directory(path) {
+        if self.is_dir(path) {
             let paths: Vec<_> = self
                 .loaded
                 .keys()
@@ -105,11 +106,11 @@ impl AssetIo for EmbeddedAssetIo {
         }
     }
 
-    fn is_directory(&self, path: &Path) -> bool {
-        let as_folder = path.join("");
-        self.loaded
-            .keys()
-            .any(|loaded_path| loaded_path.starts_with(&as_folder) && loaded_path != &path)
+    fn get_metadata(&self, path: &Path) -> Result<Metadata, AssetIoError> {
+        Ok(Metadata::new(match self.is_dir(path) {
+            true => FileType::Directory,
+            false => FileType::File
+        }))
     }
 
     fn watch_path_for_changes(&self, _path: &Path) -> Result<(), AssetIoError> {
